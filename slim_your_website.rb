@@ -54,10 +54,9 @@ class SlimYourWebsite
   end
 
   def massage_output(url, output)
-    massaged_output = [url.upcase + " " * 40]
+    massaged_output = [url.upcase + " " + "=" * (40 - url.length)]
     massaged_output << collect_realtime_information(output)
     massaged_output << collect_size_and_cpu_information(output)
-    massaged_output << " "
     massaged_output.join("\n") + "\n"
   end
 
@@ -96,12 +95,12 @@ class SlimYourWebsite
     end
 
     <<-INFO
-    Files downloaded: #{files_downloaded}
-    Download size (KB): #{download_size.to_i}
-    CPU work times (s): #{times}
-    Average CPU work time (s): #{average(times)}
-    Connection speeds (KB/s): #{connection_speeds}
-    Average connection speed (KB/s): #{average(connection_speeds).to_i}
+Files downloaded: #{files_downloaded}
+Download size (KB): #{download_size.to_i}
+CPU work times (s): #{times}
+Average CPU work time (s): #{average(times)}
+Connection speeds (KB/s): #{connection_speeds}
+Average connection speed (KB/s): #{average(connection_speeds).to_i}
     INFO
   end
 
