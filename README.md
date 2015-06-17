@@ -7,7 +7,7 @@ This is a command line utility that runs multiple requests to a list of URLS and
 You'll need a text file containing a list of URLs you want to test.
 
 ```
-ruby slim_your_wallet.rb input_file.txt 
+ruby slim_your_website.rb input_file.txt
 ```
 By default, the utility will run 10 requests against all valid URLs in the file and give you some output, like this:
 
@@ -36,5 +36,5 @@ Average connection speed (KB/s): 140
 If you want to increase or reduce the number of requests, use the second argument on the command line:
 
 ```
-ruby slim_your_wallet.rb input_file.txt 3
+ruby slim_your_website.rb input_file.txt 3
 ```
