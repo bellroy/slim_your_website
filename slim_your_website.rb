@@ -101,15 +101,14 @@ class SlimYourWebsite
 
   def average(array_of_numbers)
     sum = array_of_numbers.inject(&:+)
-    return (sum / array_of_numbers.length).round(1)
+    length = array_of_numbers.length == 0 ? 1 : array_of_numbers.length
+    return (sum / length).round(1)
   end
 end
 
 slim_your_website = SlimYourWebsite.new
-times = ARGV[1].to_i
+times = (ARGV[1] || "10").to_i
 filename = ARGV[0]
 result = slim_your_website.assess(filename, times)
 print "\r"
 puts result
-
-
