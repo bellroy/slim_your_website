@@ -1,5 +1,6 @@
 require 'uri'
 require 'fileutils'
+require 'pry'
 
 class SlimYourWebsite
   DOWNLOAD_REPEATS = 10
@@ -42,7 +43,8 @@ class SlimYourWebsite
     FileUtils.mkdir("output") rescue Errno::EEXIST
     no_of_times.times do
       command = "cd output; wget -E -H -k -p -nv --output-file=../#{OUTPUT_FILENAME} #{url}; cd ../; cat #{OUTPUT_FILENAME}"
-      output << `#{command}`
+      this_output = `#{command}`
+      output << this_output
       update_progress
     end
     FileUtils.remove_dir("output")
@@ -84,15 +86,18 @@ class SlimYourWebsite
       lines = output_entry.split("\n")
       line = lines.find{|line| line.start_with?(PAGE_SIZE_PREFIX)}
       if line
-        match_data = /#{PAGE_SIZE_PREFIX}([0-9]+) files, (.*)K in (.*)s \((.*) KB\/s\)/.match(line)
+        match_data = /#{PAGE_SIZE_PREFIX}([0-9]+) files, (.*)([KM]+) in (.*)s \((.*) ([KM]+)B\/s\)/.match(line)
         files_downloaded = match_data[1].gsub(",", "").to_i
-        download_size = match_data[2].gsub(",", "").to_i
-        times << match_data[3].gsub(",", "").to_f
-        connection_speeds << match_data[4].gsub(",", "").to_i
+        download_size = match_data[2].gsub(",", "").to_f
+        download_size *= 1000 if match_data[3] == "M"
+        times << match_data[4].gsub(",", "").to_f
+        connection_speed = match_data[5].gsub(",", "").to_f
+        connection_speed *= 1000 if match_data[6] == "M"
+        connection_speeds << connection_speed
       end
     end
     return "Files downloaded: #{files_downloaded}\n" +
-      "Download size (KB): #{download_size}\n" +
+      "Download size (KB): #{download_size.to_i}\n" +
       "CPU work times (s): #{times}\n" +
       "Average CPU work time (s): #{average(times)}\n" +
       "Connection speeds (KB/s): #{connection_speeds}\n" +
