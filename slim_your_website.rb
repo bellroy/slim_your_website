@@ -1,12 +1,13 @@
 require 'uri'
+require 'open3'
 require 'fileutils'
-require 'pry'
+require 'shellwords'
+require 'tmpdir'
 
 class SlimYourWebsite
   DOWNLOAD_REPEATS = 10
   DOWNLOAD_TIME_PREFIX = "Total wall clock time: "
   PAGE_SIZE_PREFIX = "Downloaded: "
-  OUTPUT_FILENAME = "output.txt"
 
   def assess(filename, no_of_times = DOWNLOAD_REPEATS)
     lines = IO.readlines(filename).map(&:strip)
@@ -17,7 +18,6 @@ class SlimYourWebsite
       if is_valid_url?(url)
         output = get_site_repeatedly(url, no_of_times || DOWNLOAD_REPEATS)
         result += massage_output(url, output)
-        cleanup_output_file
       end
     end if File.exists?(ARGV[0])
     result
@@ -40,19 +40,17 @@ class SlimYourWebsite
 
   def get_site_repeatedly(url, no_of_times)
     output = []
-    FileUtils.mkdir("output") rescue Errno::EEXIST
     no_of_times.times do
-      command = "cd output; wget -E -H -k -p -nv --output-file=../#{OUTPUT_FILENAME} #{url}; cd ../; cat #{OUTPUT_FILENAME}"
-      this_output = `#{command}`
-      output << this_output
+      Dir.mktmpdir do |output_dir|
+        command = "wget -H -p -nv #{url.shellescape}"
+        _, stderr, status = Open3.capture3(command, chdir: output_dir)
+        output << stderr
+      end
+
       update_progress
     end
-    FileUtils.remove_dir("output")
-    output
-  end
 
-  def cleanup_output_file
-    File.delete(OUTPUT_FILENAME)
+    output
   end
 
   def massage_output(url, output)
@@ -96,16 +94,19 @@ class SlimYourWebsite
         connection_speeds << connection_speed
       end
     end
-    return "Files downloaded: #{files_downloaded}\n" +
-      "Download size (KB): #{download_size.to_i}\n" +
-      "CPU work times (s): #{times}\n" +
-      "Average CPU work time (s): #{average(times)}\n" +
-      "Connection speeds (KB/s): #{connection_speeds}\n" +
-      "Average connection speed (KB/s): #{average(connection_speeds).to_i}"
+
+    <<-INFO
+    Files downloaded: #{files_downloaded}
+    Download size (KB): #{download_size.to_i}
+    CPU work times (s): #{times}
+    Average CPU work time (s): #{average(times)}
+    Connection speeds (KB/s): #{connection_speeds}
+    Average connection speed (KB/s): #{average(connection_speeds).to_i}
+    INFO
   end
 
   def average(array_of_numbers)
-    sum = array_of_numbers.inject(&:+)
+    sum = array_of_numbers.inject(0, :+)
     length = array_of_numbers.length == 0 ? 1 : array_of_numbers.length
     return (sum / length).round(1)
   end
